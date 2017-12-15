@@ -1,0 +1,262 @@
+<!--
+  openHAB nodes for IBM's Node-Red
+  https://github.com/pdmangel/node-red-contrib-openhab2
+  (c) 2017, Peter De Mangelaere <peter.demangelaere@gmail.com>
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+
+<script type="text/x-red" data-template-name="OPPO UDP 20x player">
+    <div class="form-row">
+        <label for="node-config-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-config-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-host"><i class="fa fa-globe"></i> Host</label>
+        <input type="text" id="node-config-input-host">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-port"><i class="icon-bookmark"></i> Port</label>
+        <input type="text" id="node-config-input-port">
+    </div>
+
+</script>
+
+<script type="text/x-red" data-help-name="OPPO UDP 20x player">
+    <p>Configuration node for communication with an openHAB controller.</p>
+	<p></p>
+	<b>Configuration</b>
+    <ul>
+        <li><b>Name :</b> Specify a name for the configuration node</li>
+        <li><b>Host :</b> Specify the hostname or ip address</li>
+        <li><b>Port :</b> (Optionally) Specify the ip port</li>
+   	 </ul>
+
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType('OPPO UDP 20x player', {
+        category: 'config',
+        defaults: {
+            name: {value: "", required: true},
+            host: {value: "", required: true},
+            port: {value: 23, required: true /*,	validate:RED.validators.number() */}
+        },
+        label: function () {
+            return this.name || "OPPO UDP 20x player";
+        }
+    });
+</script>
+
+<script type="text/x-red" data-template-name="OPPO UDP 20x-in">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-controller"><i class="fa fa-globe"></i> Player</label>
+        <input type="text" id="node-input-player">
+    </div>
+    <div class="form-row">
+        <label for="node-input-itemname"><i class="fa fa-crosshairs"></i> Item</label>
+        <input type="text" id="node-input-itemname" placeholder="Item">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="OPPO UDP 20x-in">
+    <p>Listens to state changes of a selected Oppo player item.</p>
+	<p></p>
+	<b>Configuration</b>
+    <ul>
+        <li><b>Name :</b> Optionally specify a name</li>
+        <li><b>Controller :</b> Select the OPPO player</li>
+        <li><b>Item :</b>Select the Item to monitor</li>
+   	 </ul>
+	<p></p>
+	<b>Messages injected in NodeRED flows (2 channels)</b>
+    <ul>
+        <li><code>msg.item</code> : the item's itemname (not label)</li>
+        <li><code>msg.topic</code> : "StateEvent"</li>
+        <li><code>msg.payload</code> : the new state of the selected item</li>
+  	 		</ul>
+		</li>
+   	 </ul>
+
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType('OPPO UDP 20x-in', {
+        category: 'input',
+        color: '#006738',
+        defaults: {
+            name: {value: ""},
+            player: {value: "", type: "OPPO UDP 20x player", required: true},
+            itemname: {value: "", required: true},
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: "node-red-contrib-oppo.png",
+        label: function () {
+            return (this.name || this.itemname || 'OPPO UDP 20x');
+        },
+        oneditprepare: function () {
+            //fillPlayerDropDown(this, false);
+        }
+    });
+
+</script>
+
+
+<script type="text/x-red" data-template-name="OPPO UDP 20x-out">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-player"><i class="fa fa-globe"></i> Player</label>
+        <input type="text" id="node-input-player">
+    </div>
+    <div class="form-row">
+        <label for="node-input-itemname"><i class="fa fa-crosshairs"></i> Remote</label>
+        <select id="node-input-itemname" name="node-input-itemname" style="width: 250px;">
+			<option value=""></option>
+			<optgroup label="remote keys">
+                <option value="POW">Toggle power</option>
+                <option value="EJT">Open/close the disc tray</option>
+                <option value="PON">Discrete on</option>
+                <option value="POF">Discrete off</option>
+                <option value="DIM"></option>
+                <option value="PUR"></option>
+                <option value="VUP"></option>
+                <option value="VDN"></option>
+                <option value="MUT"></option>
+                <option value="NU1"></option>
+                <option value="NU2"></option>
+                <option value="NU3"></option>
+                <option value="NU4"></option>
+                <option value="NU5"></option>
+                <option value="NU6"></option>
+                <option value="NU7"></option>
+                <option value="NU8"></option>
+                <option value="NU9"></option>
+                <option value="NU0"></option>
+                <option value="CLR"></option>
+                <option value="GTO"></option>
+                <option value="HOM"></option>
+                <option value="PUP"></option>
+                <option value="PDN"></option>
+                <option value="OSD"></option>
+                <option value="TTL"></option>
+                <option value="MNU"></option>
+                <option value="NUP"></option>
+                <option value="NLT"></option>
+                <option value="NRT"></option>
+                <option value="NDN"></option>
+                <option value="SEL"></option>
+                <option value="SET"></option>
+                <option value="RET"></option>
+                <option value="RED"></option>
+                <option value="GRN"></option>
+                <option value="BLU"></option>
+                <option value="YLW"></option>
+                <option value="STP">Stop playback</option>
+                <option value="PLA">Start playback</option>
+                <option value="PAU">Pause playback</option>
+                <option value="PRE"></option>
+                <option value="REV"></option>
+                <option value="FWD"></option>
+                <option value="NXT"></option>
+                <option value="AUD"></option>
+                <option value="SUB"></option>
+                <option value="ANG"></option>
+                <option value="ZOM"></option>
+                <option value="SAP"></option>
+                <option value="ATB"></option>
+                <option value="RPT"></option>
+                <option value="PIP"></option>
+                <option value="HDM"></option>
+                <option value="SUH"></option>
+                <option value="OPT"></option>
+                <option value="M3D"></option>
+                <option value="SEH"></option>
+                <option value="NOP"></option>
+            </optgroup>
+			<option value=""></option>
+			<option value=""></option>
+			<option value=""></option>
+			<option value=""></option>
+			<option value=""></option>
+			<option value=""></option>
+			<option value=""></option>
+			<option value="ItemUpdate">ItemUpdate</option>
+    	</select>
+
+    </div>
+    <div class="form-row">
+        <label for="node-input-topic"><i class="fa fa-tasks"></i> Topic</label>
+    	<select id="node-input-topic" name="node-input-topic" style="width: 250px;">
+			<option value=""></option>
+			<option value="ItemCommand">ItemCommand</option>
+			<option value="ItemUpdate">ItemUpdate</option>
+    	</select>
+    </div>
+    <div class="form-row">
+        <label for="node-input-payload"><i class="fa fa-envelope"></i> Payload</label>
+        <input type="text" id="node-input-payload" placeholder="Payload">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="OPPO UDP 20x-out">
+    <p>Listens to state changes of a selected Oppo player item.</p>
+	<p></p>
+	<b>Configuration</b>
+    <ul>
+        <li><b>Name :</b> Optionally specify a name</li>
+        <li><b>Controller :</b> Select the OPPO player</li>
+        <li><b>Item :</b>Select the Item to monitor</li>
+   	 </ul>
+	<p></p>
+	<b>Messages injected in NodeRED flows (2 channels)</b>
+    <ul>
+        <li><code>msg.item</code> : the item's itemname (not label)</li>
+        <li><code>msg.topic</code> : "StateEvent"</li>
+        <li><code>msg.payload</code> : the new state of the selected item</li>
+  	 		</ul>
+		</li>
+   	 </ul>
+
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType('OPPO UDP 20x-out', {
+        category: 'output',
+        color: '#006738',
+        defaults: {
+            name: {value: ""},
+            player: {value: "", type: "OPPO UDP 20x player", required: true},
+            itemname: {value: "", required: true},
+            topic: {value: "{msg.topic}", required: false},
+            payload: {value: "{msg.payload}", required: false},
+        },
+        inputs: 1,
+        outputs: 0,
+        icon: "node-red-contrib-oppo.png",
+        label: function () {
+            return (this.name || this.itemname || 'OPPO UDP 20x');
+        },
+        oneditprepare: function () {
+            //fillPlayerDropDown(this, false);
+        }
+    });
+
+</script>
