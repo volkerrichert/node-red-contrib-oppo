@@ -102,13 +102,33 @@ module.exports = function (RED) {
             response: '(?:QRE )?OK (?<time>[0-9][0-9]:[0-9][0-9]:[0-9][0-9])',
             updateResponse: 'UTC (?<title>[^ ]+) (?<chapter>[^ ]+) R (?<time>[0-9][0-9]:[0-9][0-9]:[0-9][0-9])'
         },
-        'QDT': {desc: 'Query disc type', mode: 2, updateResponse: 'UDT'},
-        'QAT': {desc: 'Query audio type', mode: 2, updateResponse: 'UAT'},
-        'QST': {desc: 'Query subtitle type', mode: 2, updateResponse: 'UST'},
-        'QSH': {desc: 'Query subtitle shift', mode: null},
-        'QOP': {desc: 'Query OSD position', mode: null},
-        'QRP': {desc: 'Query Repeat Mode', mode: null},
-        'QZM': {desc: 'Query Zoom Mode', mode: null},
+        'QDT': {
+            desc: 'Query disc type',
+            mode: 2,
+            response: '(?:QDT )?OK ([a-zA-Z \-]+)',
+            updateResponse: 'UDT'},
+        'QAT': {
+            desc: 'Query audio type',
+            mode: 2,
+            response: '(?:QAT )?OK (?<type>[^ ]+) (?<track>[0-9]+)/(?<total>[0-9]+)(?: (?<language>[A-Za-z]*))',
+            updateResponse: 'UAT'},
+        'QST': {
+            desc: 'Query subtitle type',
+            mode: 2,
+            response: '(?:QST )?OK ([a-zA-Z \-]+)',
+            updateResponse: 'UST'},
+        'QSH': {
+            desc: 'Query subtitle shift',
+            mode: null,
+            response: '(?:QSH )?OK ([0-9\-]+)'},
+        'QOP': {
+            desc: 'Query OSD position',
+            mode: null,
+            response: '(?:QOP )?OK ([0-5]+)'},
+        'QRP': {desc: 'Query Repeat Mode', mode: null,
+            response: '(?:QRP )?OK (?<number>[0-5][0-5]) (?<text>[A-Za-z \-]+)'},
+        'QZM': {desc: 'Query Zoom Mode', mode: null,
+            response: '(?:QZM )?OK (?<number>[0-5][0-5]) (?<text>[A-Za-z \-]+)'},
     };
 
     let setCommands = {
