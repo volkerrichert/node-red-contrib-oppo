@@ -1,3 +1,5 @@
+"use strict";
+
 let net = require('net');
 let named = require('named-js-regexp');
 
@@ -7,35 +9,36 @@ module.exports = function (RED) {
         'QVM': {
             desc: 'Query verbose mode',
             mode: null,
-            response: 'OK ([0-9])'
+            response: '(?:QVM )?OK ([0-9])'
         },
         'QPW': {
             desc: 'Query power status',
             mode: 2,
-            response: 'OK ([a-zA-Z]+)',
-            updateResponse: 'UPW ([01])',
-            convertUpdate: state => {
-                "use strict";
+            response: '(?:QPW )?OK ([a-zA-Z]+)',
+            handle: (player, state) => {
+
+                player.setOnline(state === 'ON' || state === '1');
 
                 if (state === '1') {
                     return 'ON';
                 } else if (state === '0') {
                     return 'OFF'
                 }
-                return null;
-            }
+                return state;
+            },
+            updateResponse: 'UPW ([01])'
         },
         'QVR': {
             desc: 'Query firmware version',
             mode: null,
-            response: 'OK ([^\\r])'
+            response: '(?:QVR )?OK ([a-zA-Z0-9 \-]+)'
         },
         'QVL': {
             desc: 'Query volume',
             mode: 2,
-            response: 'OK ([a-zA-Z0-9]+)',
+            response: '(?:QVL )?OK ([a-zA-Z0-9]+)',
             updateResponse: 'UVL ([a-zA-Z0-9]+)',
-            convertUpdate: volume => {
+            handle: (player, volume) => {
                 "use strict";
                 if (volume === 'MUT' || volume === 'UMT') return 'MUTE';
                 return volume;
@@ -44,56 +47,59 @@ module.exports = function (RED) {
         'QHD': {
             desc: 'Query HDMI resolution',
             mode: 3,
-            response: 'OK ([^\\r]+)',
+            response: '(?:QHD )?OK ([a-zA-Z\ ]+)',
             updateResponse: 'UVO ([^\\r]+)'
         },
         'QPL': {
             desc: 'Query playback status',
             mode: 2,
-            response: 'OK ([a-zA-Z]+)',
-            updateResponse: 'UPL ([a-zA-Z]+)'
+            response: '(?:QPL )?OK ([a-zA-Z ]+)',
+            updateResponse: 'UPL ([a-zA-Z ]+)'
         },
         'QTK': {
             desc: 'Query Track/Title',
             mode: null,
-            response: 'OK (?<title>[0-9]+)/(?<total>[0-9]+)'
+            response: '(?:QTK )?OK (?<title>[0-9]+)/(?<total>[0-9]+)'
         },
         'QCH': {
             desc: 'Query Chapter',
             mode: null,
-            response: 'OK (?<chapter>[0-9]+)/(?<total>[0-9]+)'
+            response: '(?:QCH )?OK (?<chapter>[0-9]+)/(?<total>[0-9]+)'
         },
         'QTE': {
             desc: 'Query Track/Title elapsed time',
             mode: 3,
-            response: 'OK (?<time>[0-9][0-9]:[0-9][0-9]:[0-9][0-9])',
+            response: '(?:QTE )?OK (?<time>[0-9][0-9]:[0-9][0-9]:[0-9][0-9])',
             updateResponse: 'UTC (?<title>[^\ ]+) (?<chapter>[^\ ]+) E (?<time>[0-9][0-9]:[0-9][0-9]:[0-9][0-9])'
         },
         'QTR': {
             desc: 'Query Track/Title remaining time',
             mode: 3,
-            response: 'OK (?<time>[0-9][0-9]:[0-9][0-9]:[0-9][0-9])',
+            response: '(?:QTR )?OK (?<time>[0-9][0-9]:[0-9][0-9]:[0-9][0-9])',
             updateResponse: 'UTC (?<title>[^ ]+) (?<chapter>[^ ]+) X (?<time>[0-9][0-9]:[0-9][0-9]:[0-9][0-9])'
         },
         'QCE': {
             desc: 'Query Chapter elapsed time',
             mode: 3,
+            response: '(?:QCE )?OK (?<time>[0-9][0-9]:[0-9][0-9]:[0-9][0-9])',
             updateResponse: 'UTC (?<title>[^ ]+) (?<chapter>[^ ]+) C (?<time>[0-9][0-9]:[0-9][0-9]:[0-9][0-9])'
         },
         'QCR': {
             desc: 'Query Chapter remaining time',
             mode: 3,
+            response: '(?:QCR )?OK (?<time>[0-9][0-9]:[0-9][0-9]:[0-9][0-9])',
             updateResponse: 'UTC (?<title>[^ ]+) (?<chapter>[^ ]+) K (?<time>[0-9][0-9]:[0-9][0-9]:[0-9][0-9])'
         },
         'QEL': {
             desc: 'Query Total elapsed time',
             mode: 3,
-            response: 'OK (?<time>[0-9][0-9]:[0-9][0-9]:[0-9][0-9])',
+            response: '(?:QEL )?OK (?<time>[0-9][0-9]:[0-9][0-9]:[0-9][0-9])',
             updateResponse: 'UTC\ (?<title>[^\ ]+)\ (?<chapter>[^\ ]+)\ T (?<time>[0-9][0-9]:[0-9][0-9]:[0-9][0-9])'
         },
         'QRE': {
             desc: 'Query Total remaining time',
             mode: 3,
+            response: '(?:QRE )?OK (?<time>[0-9][0-9]:[0-9][0-9]:[0-9][0-9])',
             updateResponse: 'UTC (?<title>[^ ]+) (?<chapter>[^ ]+) R (?<time>[0-9][0-9]:[0-9][0-9]:[0-9][0-9])'
         },
         'QDT': {desc: 'Query disc type', mode: 2, updateResponse: 'UDT'},
@@ -108,18 +114,33 @@ module.exports = function (RED) {
     let setCommands = {
         'SVM': {
             desc: 'set verbose mode',
-            //params: '{{msg.payload}}',
-            response: 'OK (\\d)',
+            response: '(?:SVM )?OK (\\d)',
             queryCommand: 'QVM'
+        },
+        'POW': {
+            desc: 'power player on',
+            response: '(?:POW )?OK ([a-zA-Z]+)',
+            queryCommand: 'QPW'
+        },
+        'PON': {
+            desc: 'Discrete on',
+            response: 'OK (ON)',
+            queryCommand: 'QPW'
+        },
+        'POF': {
+            desc: 'Discrete off',
+            response: 'OK (OFF)',
+            queryCommand: 'QPW'
         }
     };
 
     let updateCommands = {};
+
     Object.keys(queryCommands).forEach(function (key) {
         let command = queryCommands[key];
 
         if (command.response) {
-            command.responseRegEx = named('^(?:' + key + ' )?' + command.response);
+            command.responseRegEx = named('^' + command.response);
         } else {
             command.responseRegEx = named('^' + key);
         }
@@ -133,7 +154,7 @@ module.exports = function (RED) {
             updateCommands[updateCommand].push({
                 queryCommand: key,
                 regexp: named('^' + updateResponse),
-                convertUpdate: command.convertUpdate
+                handle: command.handle
             });
         }
     });
@@ -142,7 +163,7 @@ module.exports = function (RED) {
         let command = setCommands[key];
 
         if (command.response) {
-            command.responseRegEx = named('^(?:' + key + ' )?' + command.response);
+            command.responseRegEx = named('^' + command.response);
         } else {
             command.responseRegEx = named('^' + key);
         }
@@ -158,7 +179,8 @@ module.exports = function (RED) {
         const CommandPrefix = "#";
         const AnswerPrefix = "@";
 
-        let isPlayerConnected = false;
+        let isPlayerConnected = false,
+            isPlayerOnline = false;
 
         let commandStack = [],
             client = null,
@@ -167,7 +189,6 @@ module.exports = function (RED) {
         RED.nodes.createNode(this, config);
 
         let node = this;
-
         if (config.host && config.port) {
             function connectOppo(isReconnecting) {
                 if (client != null) {
@@ -178,19 +199,12 @@ module.exports = function (RED) {
                     node.log('Connected to ' + config.host + ":" + config.port);
                     isPlayerConnected = true;
                     reconnectCounter = 0;
-                    if (!isReconnecting) {
-                        // update verbose mode
-                        //node.queueCommand("SVM", "3");
-                        node.queueCommand("QPW");
-
-                        node.emit('Status', "CONNECTED");
-                    } else {
-                        node.emit('Status', "RECONNECTED");
-                    }
+                    node.queueCommand("QPW");
+                    node.emit('PlayerStatus', "CONNECTED");
 
                     setTimeout(function () {
                         node.writeToClient();
-                    }, 100);
+                    }, 1000);
                 });
 
                 // handle the 'data' event
@@ -206,13 +220,20 @@ module.exports = function (RED) {
                                 let matched = answer.match(queryCommands[lastCommand.name].responseRegEx);
 
                                 if (matched) {
+
                                     commandStack.shift();
                                     if (Object.keys(matched.groups()).length > 0) { // names groups
+                                        if (queryCommands[lastCommand.name].handle) {
+                                            queryCommands[lastCommand.name].handle(node, matched.groups());
+                                        }
                                         node.emit(
                                             lastCommand.name,
                                             matched.groups()
                                         )
                                     } else {
+                                        if (queryCommands[lastCommand.name].handle) {
+                                            queryCommands[lastCommand.name].handle(node, matched[1]);
+                                        }
                                         node.emit(
                                             lastCommand.name,
                                             matched[1]
@@ -228,11 +249,17 @@ module.exports = function (RED) {
                                 if (matched) {
                                     commandStack.shift();
                                     if (Object.keys(matched.groups()).length > 0) { // names groups
+                                        if (queryCommands[setCommands[lastCommand.name].queryCommand].handle) {
+                                            queryCommands[setCommands[lastCommand.name].queryCommand].handle(node, matched.groups());
+                                        }
                                         node.emit(
                                             setCommands[lastCommand.name].queryCommand,
                                             matched.groups()
                                         )
                                     } else {
+                                        if (queryCommands[setCommands[lastCommand.name].queryCommand].handle) {
+                                            queryCommands[setCommands[lastCommand.name].queryCommand].handle(node, matched[1]);
+                                        }
                                         node.emit(
                                             setCommands[lastCommand.name].queryCommand,
                                             matched[1]
@@ -257,17 +284,17 @@ module.exports = function (RED) {
                                         let matched = answer.match(updateCommands[updateCommand][i].regexp);
                                         if (!matched) continue;
 
-                                        let convertUpdate = updateCommands[updateCommand][i].convertUpdate || (data => data);
+                                        let handle = updateCommands[updateCommand][i].handle || (data => data);
 
                                         if (Object.keys(matched.groups()).length > 0) { // names groups
                                             node.emit(
                                                 updateCommands[updateCommand][i].queryCommand,
-                                                convertUpdate(matched.groups())
+                                                handle(node, matched.groups())
                                             )
                                         } else {
                                             node.emit(
                                                 updateCommands[updateCommand][i].queryCommand,
-                                                convertUpdate(matched[1])
+                                                handle(node, matched[1])
                                             )
                                         }
 
@@ -287,7 +314,7 @@ module.exports = function (RED) {
                 client.on('close', function (had_error) {
                     node.log("connection Close");
                     isPlayerConnected = false;
-                    node.emit('Status', {state: "DISCONNECTED"});
+                    node.emit('PlayerStatus', "DISCONNECTED");
                     if (client != null) {
                         client.destroy();
                         client = null;
@@ -295,9 +322,9 @@ module.exports = function (RED) {
                         reconnectCounter++;
 
                         setTimeout(function () {
-                            node.emit('Status', {state: "RECONNECTING"});
+                            node.emit('PlayerStatus', "RECONNECTING");
                             connectOppo(true);
-                        }, 10000 + 5000*reconnectCounter);
+                        }, 10000 + 5000*Math.min(10, reconnectCounter));
                     }
                 });
 
@@ -319,32 +346,56 @@ module.exports = function (RED) {
 
         node.queueCommand = function (cmd, param) {
             "use strict";
-            node.log("queing " + cmd);
-            node.log(JSON.stringify(commandStack));
-
-            param = param || null;
             let now = Date.now();
-            commandStack.push({
-                'name': cmd,
-                'parameter': param,
-                'timestamp': now
-            });
+            if (node.isPlayerOnline || cmd === 'QPW' || cmd === 'POW' || cmd === 'PON') {
+                 node.log("queing " + cmd);
 
-            // remove first commands if older than 10sec
-            // improve this
-            node.log("check ");
-            if (commandStack.length > 0 && commandStack[0].timestamp + 10000 < now) {
-                commandStack.shift();
+                param = param || null;
+                commandStack.push({
+                    'name': cmd,
+                    'parameter': param,
+                    'timestamp': null
+                });
+
+                // remove first commands if older than 2sec
+                // improve this
+                if (commandStack.length > 0 && commandStack[0].timestamp !== null && commandStack[0].timestamp + 2000 < now) {
+                    commandStack.shift();
+                }
+                node.log("queue: " + JSON.stringify(commandStack));
+
             }
-            node.log("check end");
+
             node.writeToClient();
         };
 
         node.writeToClient = function () {
             if (commandStack.length >= 1 && isPlayerConnected) {
                 let command = commandStack[0];
-                node.log("sending " + CommandPrefix + command.name + (command.parameter !== null ? ' ' + command.parameter : ''));
-                client.write(CommandPrefix + command.name + (command.parameter !== null ? ' ' + command.parameter : '') + "\r\n");
+                if (command.timestamp === null) {
+                    // command not send
+                    command.timestamp = Date.now();
+                    node.log("sending " + CommandPrefix + command.name + (command.parameter !== null ? ' ' + command.parameter : ''));
+                    client.write(CommandPrefix + command.name + (command.parameter !== null ? ' ' + command.parameter : '') + "\r\n");
+                }
+            }
+        };
+
+        node.setOnline = function(isPlayerOnline) {
+            if (this.isPlayerOnline !== isPlayerOnline) {
+                this.isPlayerOnline = isPlayerOnline;
+                if (isPlayerOnline) {
+                    // enable verbose mode
+                    let node = this;
+
+                    setTimeout(() => {
+                        node.queueCommand('SVM', '3');
+                        node.emit('PlayerStatus', 'ON');
+                    }, 3000);
+                } else {
+                    this.emit('PlayerStatus', 'OFF');
+                }
+
             }
         };
 
@@ -358,6 +409,8 @@ module.exports = function (RED) {
             isPlayerConnected = false;
             reconnectCounter = 0;
         });
+
+        node.setMaxListeners(0);
     }
 
     RED.nodes.registerType("OPPO UDP 20x player", Oppo20xPlayerNode);
@@ -385,7 +438,6 @@ module.exports = function (RED) {
             let color = null;
             let shape = null;
             switch (currentStatus) {
-                case 'CONNECTED':
                 case 'OFF':
                     color = 'green';
                     shape = 'ring';
@@ -398,6 +450,7 @@ module.exports = function (RED) {
                     color = 'gray';
                     shape = 'dot';
                     break;
+                case 'CONNECTED':
                 case 'RECONNECTING':
                     color = 'yellow';
                     shape = 'ring';
@@ -417,18 +470,19 @@ module.exports = function (RED) {
                 });
         };
 
-        node.processStatusEvent = function (event) {
+        node.processPlayerEvent = function (event) {
             "use strict";
 
-            node.log("status " + JSON.stringify(event));
             node.context().set("currentStatus", event);
 
-            if (event === 'CONNECTED') { // successfully connected
+            if (event === 'ON') { // successfully connected
                 if (queryCommands[itemName]) { // valid command
                     oppoplayer.queueCommand(itemName);
                 } else {
                     node.log('invalid query commend ' + itemName);
                 }
+            } else {
+                node.context().set("currentState", null);
             }
 
             // update node's visual status
@@ -449,14 +503,14 @@ module.exports = function (RED) {
 
                 // inject the state in the node-red flow
                 let msgid = RED.util.generateId();
-                node.send({_msgid: msgid, payload: currentState, item: itemName, event: "StateEvent"});
+                node.send({_msgid: msgid, payload: currentState, topic: itemName});
             }
         };
 
-        node.context().set("currentState", "?");
-        node.context().set("currentStatus", "DISCONNECTED");
+        node.context().set("currentState", null);
+        node.context().set("currentStatus", null);
         oppoplayer.addListener(itemName, node.processStateEvent);
-        oppoplayer.addListener("Status", node.processStatusEvent);
+        oppoplayer.addListener("PlayerStatus", node.processPlayerEvent);
         node.refreshNodeStatus();
 
         /* ===== Node-Red events ===== */
@@ -467,11 +521,10 @@ module.exports = function (RED) {
         });
         node.on("close", function () {
             oppoplayer.removeListener(itemName, node.processStateEvent);
-            oppoplayer.removeListener("Status", node.processStatusEvent);
+            oppoplayer.removeListener("PlayerStatus", node.processStatusEvent);
         });
     }
 
-    //
     RED.nodes.registerType("OPPO UDP 20x-in", OppoInNode);
 
     function OppoOutNode(config) {
@@ -520,6 +573,7 @@ module.exports = function (RED) {
 
     //
     RED.nodes.registerType("OPPO UDP 20x-out", OppoOutNode);
+
     /**
      * Start auto detection of OPPO 10x and 20x players
      */
