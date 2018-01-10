@@ -541,7 +541,7 @@ module.exports = function (RED) {
         });
         node.on("close", function () {
             oppoplayer.removeListener(itemName, node.processStateEvent);
-            oppoplayer.removeListener("PlayerStatus", node.processStatusEvent);
+            oppoplayer.removeListener("PlayerStatus", node.processPlayerEvent);
         });
     }
 
@@ -591,7 +591,6 @@ module.exports = function (RED) {
 
     }
 
-    //
     RED.nodes.registerType("OPPO UDP 20x-out", OppoOutNode);
 
     /**
