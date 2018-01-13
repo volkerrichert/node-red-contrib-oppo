@@ -5,6 +5,15 @@ let named = require('named-js-regexp');
 
 module.exports = function (RED) {
 
+    let parseTime = (player, data) => {
+            "use strict";
+            data.h = parseInt(data.h);
+            data.s = parseInt(data.s);
+            data.m = parseInt(data.m);
+            data.seconds = data.s + data.m*60 + data.h*3600;
+
+            return data;
+        };
     let queryCommands = {
         'QVM': {
             desc: 'Query verbose mode',
@@ -69,38 +78,50 @@ module.exports = function (RED) {
         'QTE': {
             desc: 'Query Track/Title elapsed time',
             mode: 3,
-            response: '(?:QTE )?OK (?<time>[0-9][0-9]:[0-9][0-9]:[0-9][0-9])',
-            updateResponse: 'UTC (?<title>[^\ ]+) (?<chapter>[^\ ]+) E (?<time>[0-9][0-9]:[0-9][0-9]:[0-9][0-9])'
+            response: '(?:QTE )?OK (?<time>(?<h>[0-9][0-9]):(?<m>[0-9][0-9]):(?<s>[0-9][0-9]))',
+            updateResponse: 'UTC (?<title>[^\ ]+) (?<chapter>[^\ ]+) E (?<time>(?<h>[0-9][0-9]):(?<m>[0-9][0-9]):(?<s>[0-9][0-9]))',
+            handle: parseTime,
+            getNodeState: (state) => state.time
         },
         'QTR': {
             desc: 'Query Track/Title remaining time',
             mode: 3,
-            response: '(?:QTR )?OK (?<time>[0-9][0-9]:[0-9][0-9]:[0-9][0-9])',
-            updateResponse: 'UTC (?<title>[^ ]+) (?<chapter>[^ ]+) X (?<time>[0-9][0-9]:[0-9][0-9]:[0-9][0-9])'
+            response: '(?:QTR )?OK (?<time>(?<h>[0-9][0-9]):(?<m>[0-9][0-9]):(?<s>[0-9][0-9]))',
+            updateResponse: 'UTC (?<title>[^ ]+) (?<chapter>[^ ]+) X (?<time>(?<h>[0-9][0-9]):(?<m>[0-9][0-9]):(?<s>[0-9][0-9]))',
+            handle: parseTime,
+            getNodeState: (state) => state.time
         },
         'QCE': {
             desc: 'Query Chapter elapsed time',
             mode: 3,
-            response: '(?:QCE )?OK (?<time>[0-9][0-9]:[0-9][0-9]:[0-9][0-9])',
-            updateResponse: 'UTC (?<title>[^ ]+) (?<chapter>[^ ]+) C (?<time>[0-9][0-9]:[0-9][0-9]:[0-9][0-9])'
+            response: '(?:QCE )?OK (?<time>(?<h>[0-9][0-9]):(?<m>[0-9][0-9]):(?<s>[0-9][0-9]))',
+            updateResponse: 'UTC (?<title>[^ ]+) (?<chapter>[^ ]+) C (?<time>(?<h>[0-9][0-9]):(?<m>[0-9][0-9]):(?<s>[0-9][0-9]))',
+            handle: parseTime,
+            getNodeState: (state) => state.time
         },
         'QCR': {
             desc: 'Query Chapter remaining time',
             mode: 3,
-            response: '(?:QCR )?OK (?<time>[0-9][0-9]:[0-9][0-9]:[0-9][0-9])',
-            updateResponse: 'UTC (?<title>[^ ]+) (?<chapter>[^ ]+) K (?<time>[0-9][0-9]:[0-9][0-9]:[0-9][0-9])'
+            response: '(?:QCR )?OK (?<time>(?<h>[0-9][0-9]):(?<m>[0-9][0-9]):(?<s>[0-9][0-9]))',
+            updateResponse: 'UTC (?<title>[^ ]+) (?<chapter>[^ ]+) K (?<time>(?<h>[0-9][0-9]):(?<m>[0-9][0-9]):(?<s>[0-9][0-9]))',
+            handle: parseTime,
+            getNodeState: (state) => state.time
         },
         'QEL': {
             desc: 'Query Total elapsed time',
             mode: 3,
-            response: '(?:QEL )?OK (?<time>[0-9][0-9]:[0-9][0-9]:[0-9][0-9])',
-            updateResponse: 'UTC\ (?<title>[^\ ]+)\ (?<chapter>[^\ ]+)\ T (?<time>[0-9][0-9]:[0-9][0-9]:[0-9][0-9])'
+            response: '(?:QEL )?OK (?<time>(?<h>[0-9][0-9]):(?<m>[0-9][0-9]):(?<s>[0-9][0-9]))',
+            updateResponse: 'UTC\ (?<title>[^\ ]+)\ (?<chapter>[^\ ]+)\ T (?<time>(?<h>[0-9][0-9]):(?<m>[0-9][0-9]):(?<s>[0-9][0-9]))',
+            handle: parseTime,
+            getNodeState: (state) => state.time
         },
         'QRE': {
             desc: 'Query Total remaining time',
             mode: 3,
-            response: '(?:QRE )?OK (?<time>[0-9][0-9]:[0-9][0-9]:[0-9][0-9])',
-            updateResponse: 'UTC (?<title>[^ ]+) (?<chapter>[^ ]+) R (?<time>[0-9][0-9]:[0-9][0-9]:[0-9][0-9])'
+            response: '(?:QRE )?OK (?<time>(?<h>[0-9][0-9]):(?<m>[0-9][0-9]):(?<s>[0-9][0-9]))',
+            updateResponse: 'UTC (?<title>[^ ]+) (?<chapter>[^ ]+) R (?<time>(?<h>[0-9][0-9]):(?<m>[0-9][0-9]):(?<s>[0-9][0-9]))',
+            handle: parseTime,
+            getNodeState: (state) => state.time
         },
         'QDT': {
             desc: 'Query disc type',
@@ -316,103 +337,104 @@ module.exports = function (RED) {
                 while (answers.length > 0) {
                     // remove prefix
                     let answer = answers.shift();
-                    if (commandStack.length > 0) {
-                        let lastCommand = commandStack[0];
-                        if (queryCommands[lastCommand.name]) {
-                            let matched = answer.match(queryCommands[lastCommand.name].responseRegEx);
+                    if (answer.startsWith('U')) { // receive update response
+                        let updateCommand = answer.substr(0, 3);
+                        if (updateCommands[updateCommand]) {
+                            // try to match response
+                            for (let i = 0; i < updateCommands[updateCommand].length; i++) {
 
-                            if (matched) {
+                                let matched = answer.match(updateCommands[updateCommand][i].regexp);
+                                if (!matched) continue;
 
-                                commandStack.shift();
+                                let handle = updateCommands[updateCommand][i].handle || ((node, data) => data);
+
                                 if (Object.keys(matched.groups()).length > 0) { // names groups
-                                    if (queryCommands[lastCommand.name].handle) {
-                                        queryCommands[lastCommand.name].handle(node, matched.groups());
-                                    }
                                     node.emit(
-                                        lastCommand.name,
-                                        matched.groups()
+                                        updateCommands[updateCommand][i].queryCommand,
+                                        handle(node, matched.groups())
                                     )
                                 } else {
-                                    if (queryCommands[lastCommand.name].handle) {
-                                        queryCommands[lastCommand.name].handle(node, matched[1]);
-                                    }
                                     node.emit(
-                                        lastCommand.name,
-                                        matched[1]
+                                        updateCommands[updateCommand][i].queryCommand,
+                                        handle(node, matched[1])
                                     )
                                 }
-                            } else if (answer.startsWith(lastCommand.name + ' ER') || answer.startsWith('ER')) {
-                                // top command received
-                                commandStack.shift();
-                            }
-                        } else if (setCommands[lastCommand.name]) {
-                            let matched = answer.match(setCommands[lastCommand.name].responseRegEx);
 
-                            if (matched) {
-                                commandStack.shift();
-                                if (setCommands[lastCommand.name].queryCommand) { // Command has the posibility to be queried -> inform input nodes
+                                break;
+                            }
+                        }
+                    } else {
+                        if (commandStack.length > 0) {
+                            let lastCommand = commandStack[0];
+                            if (queryCommands[lastCommand.name]) {
+                                let matched = answer.match(queryCommands[lastCommand.name].responseRegEx);
+
+                                if (matched) {
+
+                                    commandStack.shift();
                                     if (Object.keys(matched.groups()).length > 0) { // names groups
-                                        if (queryCommands[setCommands[lastCommand.name].queryCommand].handle) {
-                                            queryCommands[setCommands[lastCommand.name].queryCommand].handle(node, matched.groups());
+                                        if (queryCommands[lastCommand.name].handle) {
+                                            queryCommands[lastCommand.name].handle(node, matched.groups());
                                         }
                                         node.emit(
-                                            setCommands[lastCommand.name].queryCommand,
+                                            lastCommand.name,
                                             matched.groups()
                                         )
                                     } else {
-                                        if (queryCommands[setCommands[lastCommand.name].queryCommand].handle) {
-                                            queryCommands[setCommands[lastCommand.name].queryCommand].handle(node, matched[1]);
+                                        if (queryCommands[lastCommand.name].handle) {
+                                            queryCommands[lastCommand.name].handle(node, matched[1]);
                                         }
                                         node.emit(
-                                            setCommands[lastCommand.name].queryCommand,
+                                            lastCommand.name,
                                             matched[1]
                                         )
                                     }
+                                } else if (answer.startsWith(lastCommand.name + ' ER') || answer.startsWith('ER')) {
+                                    // top command received
+                                    commandStack.shift();
                                 }
-                            } else if (answer.startsWith(lastCommand.name + ' ER') || answer.startsWith('ER')) {
-                                // top command received
+                            } else if (setCommands[lastCommand.name]) {
+                                let matched = answer.match(setCommands[lastCommand.name].responseRegEx);
+
+                                if (matched) {
+                                    commandStack.shift();
+                                    if (setCommands[lastCommand.name].queryCommand) { // Command has the posibility to be queried -> inform input nodes
+                                        if (Object.keys(matched.groups()).length > 0) { // names groups
+                                            if (queryCommands[setCommands[lastCommand.name].queryCommand].handle) {
+                                                queryCommands[setCommands[lastCommand.name].queryCommand].handle(node, matched.groups());
+                                            }
+                                            node.emit(
+                                                setCommands[lastCommand.name].queryCommand,
+                                                matched.groups()
+                                            )
+                                        } else {
+                                            if (queryCommands[setCommands[lastCommand.name].queryCommand].handle) {
+                                                queryCommands[setCommands[lastCommand.name].queryCommand].handle(node, matched[1]);
+                                            }
+                                            node.emit(
+                                                setCommands[lastCommand.name].queryCommand,
+                                                matched[1]
+                                            )
+                                        }
+                                    }
+                                } else if (answer.startsWith(lastCommand.name + ' ER') || answer.startsWith('ER')) {
+                                    // top command received
+                                    commandStack.shift();
+                                }
+                            } else {
+                                // just kick first command
                                 commandStack.shift();
                             }
                         } else {
-                            // just kick first command
-                            commandStack.shift();
-                        }
-                    } else {
-                        // handle unrequested input
-                        if (answer.startsWith('U')) { // receive update response
-                            let updateCommand = answer.substr(0, 3);
-                            if (updateCommands[updateCommand]) {
-                                // try to match response
-                                for (let i = 0; i < updateCommands[updateCommand].length; i++) {
+                            // handle unrequested input
 
-                                    let matched = answer.match(updateCommands[updateCommand][i].regexp);
-                                    if (!matched) continue;
-
-                                    let handle = updateCommands[updateCommand][i].handle || ((node, data) => data);
-
-                                    if (Object.keys(matched.groups()).length > 0) { // names groups
-                                        node.emit(
-                                            updateCommands[updateCommand][i].queryCommand,
-                                            handle(node, matched.groups())
-                                        )
-                                    } else {
-                                        node.emit(
-                                            updateCommands[updateCommand][i].queryCommand,
-                                            handle(node, matched[1])
-                                        )
-                                    }
-
-                                    break;
-                                }
-                            }
                         }
                     }
-
-                    setTimeout(function () {
-                        node.writeToClient();
-                    }, 100);
-
                 }
+
+                setTimeout(function () {
+                    node.writeToClient();
+                }, 100);
             });
 
             client.on('close', function (had_error) {
@@ -445,7 +467,6 @@ module.exports = function (RED) {
 
     RED.nodes.registerType("OPPO UDP 20x player", Oppo20xPlayerNode);
 
-
     /**
      * ====== oppo20x-in ========================
      * Handles incoming oppo events, injecting
@@ -453,6 +474,11 @@ module.exports = function (RED) {
      * ===========================================
      */
     function OppoInNode(config) {
+        let getNodeStateAsString = (currentState) => (
+            queryCommand.getNodeState ?
+                queryCommand.getNodeState(currentState) :
+                JSON.stringify(currentState));
+
 
         RED.nodes.createNode(this, config);
         this.name = config.name;
@@ -461,6 +487,7 @@ module.exports = function (RED) {
         let itemName = config.itemname;
 
         if (itemName !== undefined) itemName = itemName.trim();
+        let queryCommand = queryCommands[itemName];
 
         node.refreshNodeStatus = function () {
             let currentState = node.context().get("currentState") || null;
@@ -490,13 +517,15 @@ module.exports = function (RED) {
                     shape = 'dot';
             }
 
+
+
             if (currentState === '?' || currentState === null )
                 node.status({fill: color, shape: shape, text: "state: unknown"});
             else
                 node.status({
                     fill: color,
                     shape: shape,
-                    text: "state: " + (typeof currentState === 'object' ? JSON.stringify(currentState) : currentState)
+                    text: "state: " + (typeof currentState === 'object' ? getNodeStateAsString(currentState) : currentState)
                 });
         };
 
@@ -506,7 +535,7 @@ module.exports = function (RED) {
             node.context().set("currentStatus", event);
 
             if (event === 'ON') { // successfully connected
-                if (queryCommands[itemName]) { // valid command
+                if (queryCommand) { // valid command
                     oppoplayer.queueCommand(itemName);
                 } else {
                     node.log('invalid query commend ' + itemName);
