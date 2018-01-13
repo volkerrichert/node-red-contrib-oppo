@@ -29,11 +29,10 @@
         <label for="node-config-input-port"><i class="icon-bookmark"></i> Port</label>
         <input type="text" id="node-config-input-port">
     </div>
-
 </script>
 
 <script type="text/x-red" data-help-name="OPPO UDP 20x player">
-    <p>Configuration node for communication with an openHAB controller.</p>
+    <p>Configuration node for communication with an oppo UDP 20x player.</p>
 	<p></p>
 	<b>Configuration</b>
     <ul>
@@ -41,7 +40,6 @@
         <li><b>Host :</b> Specify the hostname or ip address</li>
         <li><b>Port :</b> (Optionally) Specify the ip port</li>
    	 </ul>
-
 </script>
 
 <script type="text/javascript">
@@ -69,7 +67,29 @@
     </div>
     <div class="form-row">
         <label for="node-input-itemname"><i class="fa fa-crosshairs"></i> Item</label>
-        <input type="text" id="node-input-itemname" placeholder="Item">
+        <select id="node-input-itemname" name="node-input-itemname" placeholder="Item">
+            <option value="QVM">Query verbose mode</option>
+            <option value="QPW">Query power status</option>
+            <option value="QVR">Query firmware version</option>
+            <option value="QVL">Query volume</option>
+            <option value="QHD">Query HDMI resolution</option>
+            <option value="QPL">Query playback status</option>
+            <option value="QTK">Query Track/Title</option>
+            <option value="QCH">Query Chapter</option>
+            <option value="QTE">Query Track/Title elapsed time</option>
+            <option value="QTR">Query Track/Title remaining time</option>
+            <option value="QCE">Query Chapter elapsed time</option>
+            <option value="QCR">Query Chapter remaining time</option>
+            <option value="QEL">Query Total elapsed time</option>
+            <option value="QRE">Query Total remaining time</option>
+            <option value="QDT">Query disc type</option>
+            <option value="QAT">Query audio type</option>
+            <option value="QST">Query subtitle type</option>
+            <option value="QST">Query subtitle shift</option>
+            <option value="QOP">Query OSD position</option>
+            <option value="QRP">Query Repeat Mode</option>
+            <option value="QZM">Query Zoom Mode</option>
+        </select>
     </div>
 </script>
 
@@ -110,7 +130,6 @@
             return (this.name || this.itemname || 'OPPO UDP 20x');
         },
         oneditprepare: function () {
-            //fillPlayerDropDown(this, false);
         }
     });
 
@@ -123,95 +142,96 @@
         <input type="text" id="node-input-name" placeholder="Name">
     </div>
     <div class="form-row">
-        <label for="node-input-player"><i class="fa fa-globe"></i> Player</label>
+        <label for="node-input-player"><i class="fa fa-play"></i> Player</label>
         <input type="text" id="node-input-player">
     </div>
+        <div class="form-row">
+        <label for="node-input-test"><i class="fa fa-globe"></i> test</label>
+        <input type="hidden" id="node-input-test" style="width:70%">
+        <input type="hidden" id="node-input-payloadType">
+    </div>
     <div class="form-row">
-        <label for="node-input-itemname"><i class="fa fa-crosshairs"></i> Remote</label>
-        <select id="node-input-itemname" name="node-input-itemname" style="width: 250px;">
-			<option value=""></option>
-			<optgroup label="remote keys">
+        <label for="node-input-command"><i class="fa fa-crosshairs"></i> Command</label>
+        <select id="node-input-command" name="node-input-command">
+            <optgroup label="Remote Keys">
                 <option value="POW">Toggle power</option>
                 <option value="EJT">Open/close the disc tray</option>
                 <option value="PON">Discrete on</option>
                 <option value="POF">Discrete off</option>
-                <option value="DIM"></option>
-                <option value="PUR"></option>
-                <option value="VUP"></option>
-                <option value="VDN"></option>
-                <option value="MUT"></option>
-                <option value="NU1"></option>
-                <option value="NU2"></option>
-                <option value="NU3"></option>
-                <option value="NU4"></option>
-                <option value="NU5"></option>
-                <option value="NU6"></option>
-                <option value="NU7"></option>
-                <option value="NU8"></option>
-                <option value="NU9"></option>
-                <option value="NU0"></option>
-                <option value="CLR"></option>
-                <option value="GTO"></option>
-                <option value="HOM"></option>
-                <option value="PUP"></option>
-                <option value="PDN"></option>
-                <option value="OSD"></option>
-                <option value="TTL"></option>
-                <option value="MNU"></option>
-                <option value="NUP"></option>
-                <option value="NLT"></option>
-                <option value="NRT"></option>
-                <option value="NDN"></option>
-                <option value="SEL"></option>
-                <option value="SET"></option>
-                <option value="RET"></option>
-                <option value="RED"></option>
-                <option value="GRN"></option>
-                <option value="BLU"></option>
-                <option value="YLW"></option>
+                <option value="DIM">Dim front panel display</option>
+                <option value="PUR">Pure audio mode</option>
+                <option value="VUP">Increase volume </option>
+                <option value="VDN">Decrease volume</option>
+                <option value="MUT">Mute audio</option>
+                <option value="NU1">Numeric key 1</option>
+                <option value="NU2">Numeric key 2</option>
+                <option value="NU3">Numeric key 3</option>
+                <option value="NU4">Numeric key 4</option>
+                <option value="NU5">Numeric key 5</option>
+                <option value="NU6">Numeric key 6</option>
+                <option value="NU7">Numeric key 7</option>
+                <option value="NU8">Numeric key 8</option>
+                <option value="NU9">Numeric key 9</option>
+                <option value="NU0">Numeric key 0</option>
+                <option value="CLR">Clear numeric input</option>
+                <option value="GTO">Play from a specified location</option>
+                <option value="HOM">Go to Home Menu to select media source</option>
+                <option value="PUP">Show previous page</option>
+                <option value="PDN">Show previous page</option>
+                <option value="OSD">Show/hide on-screen display</option>
+                <option value="TTL">Show BD top menu or DVD title menu</option>
+                <option value="MNU">Show BD pop-up menu or DVD menu</option>
+                <option value="NUP">Navigation Up</option>
+                <option value="NLT">Navigation Left</option>
+                <option value="NRT">Navigation Right</option>
+                <option value="NDN">Navigation Down</option>
+                <option value="SEL">ENTER</option>
+                <option value="SET">Enter the player setup menu</option>
+                <option value="RET">Return to the previous menu or mode</option>
+                <option value="RED">RED</option>
+                <option value="GRN">GREEN</option>
+                <option value="BLU">BLUE</option>
+                <option value="YLW">YELLOW</option>
                 <option value="STP">Stop playback</option>
                 <option value="PLA">Start playback</option>
                 <option value="PAU">Pause playback</option>
-                <option value="PRE"></option>
-                <option value="REV"></option>
-                <option value="FWD"></option>
-                <option value="NXT"></option>
-                <option value="AUD"></option>
-                <option value="SUB"></option>
-                <option value="ANG"></option>
-                <option value="ZOM"></option>
-                <option value="SAP"></option>
-                <option value="ATB"></option>
-                <option value="RPT"></option>
-                <option value="PIP"></option>
-                <option value="HDM"></option>
-                <option value="SUH"></option>
-                <option value="OPT"></option>
-                <option value="M3D"></option>
-                <option value="SEH"></option>
-                <option value="NOP"></option>
+                <option value="PRE">Skip to previous</option>
+                <option value="REV">Fast reverse play</option>
+                <option value="FWD">Fast forward play</option>
+                <option value="NXT">Skip to next</option>
+                <option value="AUD">Change audio language or channel</option>
+                <option value="SUB">Change subtitle language</option>
+                <option value="ANG">Change camera angle</option>
+                <option value="ZOM">Zoom in/out and adjust aspect ratio</option>
+                <option value="SAP">Turn on/off Secondary Audio Program</option>
+                <option value="ATB">Repeat play the selected section</option>
+                <option value="RPT">Repeat play</option>
+                <option value="PIP">Show/hide Picture-in-Picture</option>
+                <option value="HDM">Switch output resolution</option>
+                <option value="SUH">Press and hold the SUBTITLE key. This activates the subtitle shift feature</option>
+                <option value="OPT">Show/hide the Option menu</option>
+                <option value="M3D">Show/hide the 2D-to-3D Conversion or 3D adjustment menu</option>
+                <option value="SEH">Display the Picture Adjustment menu</option>
+                <option value="NOP">No operation</option>
             </optgroup>
-			<option value=""></option>
-			<option value=""></option>
-			<option value=""></option>
-			<option value=""></option>
-			<option value=""></option>
-			<option value=""></option>
-			<option value=""></option>
-			<option value="ItemUpdate">ItemUpdate</option>
-    	</select>
-
-    </div>
-    <div class="form-row">
-        <label for="node-input-topic"><i class="fa fa-tasks"></i> Topic</label>
-    	<select id="node-input-topic" name="node-input-topic" style="width: 250px;">
-			<option value=""></option>
-			<option value="ItemCommand">ItemCommand</option>
-			<option value="ItemUpdate">ItemUpdate</option>
+            <optgroup label="Advanced Commands">
+                <option value="SVM" data-payload="true">Set Verbose Mode</option>
+                <option value="SHD" data-payload="true">Set HDMI output resolution for HDMI 2</option>
+                <option value="SZM" data-payload="true">Set zoom ratio</option>
+                <option value="SVL" data-payload="true">Set volume control </option>
+                <option value="SRP" data-payload="true">Set Repeat mode</option>
+                <option value="SRH" data-payload="true">Search to</option>
+                <option value="DPL" data-payload="true">Direct play </option>
+                <option value="RST" data-payload="true">Reset Command</option>
+                <option value="SSH" data-payload="true">Set subtitle shift</option>
+                <option value="SOP" data-payload="true">Set OSD position</option>
+                <option value="STC" data-payload="true">Set the time information display</option>
+            </optgroup>
+            <option value="PAYLOAD" data-payload="true">use msg.payload as command</option>
     	</select>
     </div>
     <div class="form-row">
-        <label for="node-input-payload"><i class="fa fa-envelope"></i> Payload</label>
+        <label for="node-input-payload"><i class="fa fa-envelope"></i> Payload / Paramater</label>
         <input type="text" id="node-input-payload" placeholder="Payload">
     </div>
 </script>
@@ -243,9 +263,10 @@
         color: '#006738',
         defaults: {
             name: {value: ""},
+            test: { value:''},
+            payloadType: { value:'str'},
             player: {value: "", type: "OPPO UDP 20x player", required: true},
-            itemname: {value: "", required: true},
-            topic: {value: "{msg.topic}", required: false},
+            command: {value: "", required: true},
             payload: {value: "{msg.payload}", required: false},
         },
         inputs: 1,
@@ -256,7 +277,107 @@
             return (this.name || this.itemname || 'OPPO UDP 20x');
         },
         oneditprepare: function () {
-            //fillPlayerDropDown(this, false);
+            /*
+            $('#node-input-test').typedInput({
+                default: "bool",
+                typeField: $("#node-input-payloadType"),
+                types: [ 'bool',
+                    {
+                        value: 'ir',
+                        label: 'IR Commands',
+                        options: [
+                            'test',
+                            {
+                                value: 'POW',
+                                label: 'Power Toggle'
+                            }
+                        ]
+                    },
+                    {
+                        value: 'set',
+                        label: 'Adv Commands',
+                        options: [
+                            {
+                                value: 'SVM',
+                                label: 'Set Verbose Mode'
+                            }
+                        ]
+                    }
+                ]
+            });*/
+            $('#node-input-command').change(function(ev){
+                var $option = $(this).find('option:selected');
+                if ($option.data('PAYLOAD') === 'true') {
+
+                }
+            });
+        }
+    });
+
+</script>
+
+
+<script type="text/x-red" data-template-name="testnode">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+
+    </div>
+        <div class="form-row">
+        <label for="node-input-test"><i class="fa fa-globe"></i> test</label>
+        <input type="hidden" id="node-input-test" style="width:70%">
+        <input type="hidden" id="node-input-testType">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="testnode">
+    <p>test node for user defined typed input with key and values</p>
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType('testnode', {
+        category: 'output',
+        color: '#006738',
+        defaults: {
+            name: {value: ""},
+            test: { value:''},
+            testType: { value: 'msg'}
+        },
+        inputs: 1,
+        outputs: 0,
+        align: 'right',
+        label: function () {
+            return (this.name || 'testnode');
+        },
+        oneditprepare: function () {
+            $('#node-input-test').typedInput({
+                default: "msg",
+                typeField: $("#node-input-testType"),
+                types: [ 'msg',
+                    {
+                        value: 'ir',
+                        label: 'IR Commands',
+                        options: [
+                            'test',
+                            {
+                                value: 'POW',
+                                label: 'Power Toggle'
+                            }
+                        ]
+                    },
+                    {
+                        value: 'set',
+                        label: 'Adv Commands',
+                        options: [
+                            {
+                                value: 'SVM',
+                                label: 'Set Verbose Mode'
+                            }
+                        ]
+                    }
+                ]
+            });
         }
     });
 

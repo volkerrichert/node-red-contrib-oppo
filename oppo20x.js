@@ -134,21 +134,25 @@ module.exports = function (RED) {
     let setCommands = {
         'SVM': {
             desc: 'set verbose mode',
+            hasParameter: true,
             response: '(?:SVM )?OK (\\d)',
             queryCommand: 'QVM'
         },
         'POW': {
             desc: 'power player on',
+            hasParameter: false,
             response: '(?:POW )?OK ([a-zA-Z]+)',
             queryCommand: 'QPW'
         },
         'PON': {
             desc: 'Discrete on',
+            hasParameter: false,
             response: 'OK (ON)',
             queryCommand: 'QPW'
         },
         'POF': {
             desc: 'Discrete off',
+            hasParameter: false,
             response: 'OK (OFF)',
             queryCommand: 'QPW'
         }
@@ -185,7 +189,7 @@ module.exports = function (RED) {
         if (command.response) {
             command.responseRegEx = named('^' + command.response);
         } else {
-            command.responseRegEx = named('^' + key);
+            command.responseRegEx = named('^OK');
         }
     });
 
@@ -210,153 +214,6 @@ module.exports = function (RED) {
 
         let node = this;
         if (config.host && config.port) {
-            function connectOppo(isReconnecting) {
-                if (client != null) {
-                    client.destroy();
-                }
-                client = new net.Socket();
-                client.connect(parseInt(config.port), config.host, function () {
-                    node.log('Connected to ' + config.host + ":" + config.port);
-                    isPlayerConnected = true;
-                    reconnectCounter = 0;
-                    node.queueCommand("QPW");
-                    node.emit('PlayerStatus', "CONNECTED");
-
-                    setTimeout(function () {
-                        node.writeToClient();
-                    }, 1000);
-                });
-
-                // handle the 'data' event
-                client.on('data', function (data) {
-                    node.log('receive ' + data.toString());
-                    let answer = data.toString();
-                    if (answer.startsWith(AnswerPrefix)) {
-                        // remove prefix
-                        answer = answer.substr(AnswerPrefix.length);
-                        if (commandStack.length > 0) {
-                            let lastCommand = commandStack[0];
-                            if (queryCommands[lastCommand.name]) {
-                                let matched = answer.match(queryCommands[lastCommand.name].responseRegEx);
-
-                                if (matched) {
-
-                                    commandStack.shift();
-                                    if (Object.keys(matched.groups()).length > 0) { // names groups
-                                        if (queryCommands[lastCommand.name].handle) {
-                                            queryCommands[lastCommand.name].handle(node, matched.groups());
-                                        }
-                                        node.emit(
-                                            lastCommand.name,
-                                            matched.groups()
-                                        )
-                                    } else {
-                                        if (queryCommands[lastCommand.name].handle) {
-                                            queryCommands[lastCommand.name].handle(node, matched[1]);
-                                        }
-                                        node.emit(
-                                            lastCommand.name,
-                                            matched[1]
-                                        )
-                                    }
-                                } else if (answer.startsWith(lastCommand.name + ' ER') || answer.startsWith('ER')) {
-                                    // top command received
-                                    commandStack.shift();
-                                }
-                            } else if (setCommands[lastCommand.name]) {
-                                let matched = answer.match(setCommands[lastCommand.name].responseRegEx);
-
-                                if (matched) {
-                                    commandStack.shift();
-                                    if (Object.keys(matched.groups()).length > 0) { // names groups
-                                        if (queryCommands[setCommands[lastCommand.name].queryCommand].handle) {
-                                            queryCommands[setCommands[lastCommand.name].queryCommand].handle(node, matched.groups());
-                                        }
-                                        node.emit(
-                                            setCommands[lastCommand.name].queryCommand,
-                                            matched.groups()
-                                        )
-                                    } else {
-                                        if (queryCommands[setCommands[lastCommand.name].queryCommand].handle) {
-                                            queryCommands[setCommands[lastCommand.name].queryCommand].handle(node, matched[1]);
-                                        }
-                                        node.emit(
-                                            setCommands[lastCommand.name].queryCommand,
-                                            matched[1]
-                                        )
-                                    }
-                                } else if (answer.startsWith(lastCommand.name + ' ER') || answer.startsWith('ER')) {
-                                    // top command received
-                                    commandStack.shift();
-                                }
-                            } else {
-                                // just kick first command
-                                commandStack.shift();
-                            }
-                        } else {
-                            // handle unrequested input
-                            if (answer.startsWith('U')) { // receive update response
-                                let updateCommand = answer.substr(0, 3);
-                                if (updateCommands[updateCommand]) {
-                                    // try to match response
-                                    for (let i = 0; i < updateCommands[updateCommand].length; i++) {
-
-                                        let matched = answer.match(updateCommands[updateCommand][i].regexp);
-                                        if (!matched) continue;
-
-                                        let handle = updateCommands[updateCommand][i].handle || (data => data);
-
-                                        if (Object.keys(matched.groups()).length > 0) { // names groups
-                                            node.emit(
-                                                updateCommands[updateCommand][i].queryCommand,
-                                                handle(node, matched.groups())
-                                            )
-                                        } else {
-                                            node.emit(
-                                                updateCommands[updateCommand][i].queryCommand,
-                                                handle(node, matched[1])
-                                            )
-                                        }
-
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-
-                        setTimeout(function () {
-                            node.writeToClient();
-                        }, 100);
-
-                    }
-                });
-
-                client.on('close', function (had_error) {
-                    node.log("connection Close");
-                    isPlayerConnected = false;
-                    node.emit('PlayerStatus', "DISCONNECTED");
-                    if (client != null) {
-                        client.destroy();
-                        client = null;
-                        commandStack = [];
-                        reconnectCounter++;
-
-                        setTimeout(function () {
-                            node.emit('PlayerStatus', "RECONNECTING");
-                            connectOppo(true);
-                        }, 10000 + 5000*Math.min(10, reconnectCounter));
-                    }
-                });
-
-                // handle the 'onerror' event
-                client.on('error', function (err) {
-                    if (err.type && (JSON.stringify(err.type) === '{}'))
-                        return; // ignore
-
-                    node.warn('ERROR ' + JSON.stringify(err));
-                    node.emit('Error', JSON.stringify(err));
-                });
-            }
 
             // give the system few seconds
             setTimeout(function () {
@@ -367,7 +224,7 @@ module.exports = function (RED) {
         node.queueCommand = function (cmd, param) {
             "use strict";
             let now = Date.now();
-            if (node.isPlayerOnline || cmd === 'QPW' || cmd === 'POW' || cmd === 'PON') {
+            if (node.isPlayerOnline || cmd === 'QPW' || cmd === 'POW' || cmd === 'PON' ) {
                  node.log("queing " + cmd);
 
                 param = param || null;
@@ -415,7 +272,6 @@ module.exports = function (RED) {
                 } else {
                     this.emit('PlayerStatus', 'OFF');
                 }
-
             }
         };
 
@@ -431,6 +287,160 @@ module.exports = function (RED) {
         });
 
         node.setMaxListeners(0);
+
+        function connectOppo(isReconnecting) {
+            if (client != null) {
+                client.destroy();
+            }
+            client = new net.Socket();
+            client.connect(parseInt(config.port), config.host, function () {
+                node.log('Connected to ' + config.host + ":" + config.port);
+                isPlayerConnected = true;
+                reconnectCounter = 0;
+
+                node.queueCommand('QPW');
+                node.emit('PlayerStatus', 'CONNECTED');
+
+                setTimeout(function () {
+                    node.writeToClient();
+                }, 1000);
+            });
+
+            // handle the 'data' event
+            client.on('data', function (data) {
+                node.log('receive ' + data.toString());
+                // we may have multiple answers received -> split them
+                let answers = data.toString().split(AnswerPrefix);
+                answers.shift(); // remove first empty element
+
+                while (answers.length > 0) {
+                    // remove prefix
+                    let answer = answers.shift();
+                    if (commandStack.length > 0) {
+                        let lastCommand = commandStack[0];
+                        if (queryCommands[lastCommand.name]) {
+                            let matched = answer.match(queryCommands[lastCommand.name].responseRegEx);
+
+                            if (matched) {
+
+                                commandStack.shift();
+                                if (Object.keys(matched.groups()).length > 0) { // names groups
+                                    if (queryCommands[lastCommand.name].handle) {
+                                        queryCommands[lastCommand.name].handle(node, matched.groups());
+                                    }
+                                    node.emit(
+                                        lastCommand.name,
+                                        matched.groups()
+                                    )
+                                } else {
+                                    if (queryCommands[lastCommand.name].handle) {
+                                        queryCommands[lastCommand.name].handle(node, matched[1]);
+                                    }
+                                    node.emit(
+                                        lastCommand.name,
+                                        matched[1]
+                                    )
+                                }
+                            } else if (answer.startsWith(lastCommand.name + ' ER') || answer.startsWith('ER')) {
+                                // top command received
+                                commandStack.shift();
+                            }
+                        } else if (setCommands[lastCommand.name]) {
+                            let matched = answer.match(setCommands[lastCommand.name].responseRegEx);
+
+                            if (matched) {
+                                commandStack.shift();
+                                if (setCommands[lastCommand.name].queryCommand) { // Command has the posibility to be queried -> inform input nodes
+                                    if (Object.keys(matched.groups()).length > 0) { // names groups
+                                        if (queryCommands[setCommands[lastCommand.name].queryCommand].handle) {
+                                            queryCommands[setCommands[lastCommand.name].queryCommand].handle(node, matched.groups());
+                                        }
+                                        node.emit(
+                                            setCommands[lastCommand.name].queryCommand,
+                                            matched.groups()
+                                        )
+                                    } else {
+                                        if (queryCommands[setCommands[lastCommand.name].queryCommand].handle) {
+                                            queryCommands[setCommands[lastCommand.name].queryCommand].handle(node, matched[1]);
+                                        }
+                                        node.emit(
+                                            setCommands[lastCommand.name].queryCommand,
+                                            matched[1]
+                                        )
+                                    }
+                                }
+                            } else if (answer.startsWith(lastCommand.name + ' ER') || answer.startsWith('ER')) {
+                                // top command received
+                                commandStack.shift();
+                            }
+                        } else {
+                            // just kick first command
+                            commandStack.shift();
+                        }
+                    } else {
+                        // handle unrequested input
+                        if (answer.startsWith('U')) { // receive update response
+                            let updateCommand = answer.substr(0, 3);
+                            if (updateCommands[updateCommand]) {
+                                // try to match response
+                                for (let i = 0; i < updateCommands[updateCommand].length; i++) {
+
+                                    let matched = answer.match(updateCommands[updateCommand][i].regexp);
+                                    if (!matched) continue;
+
+                                    let handle = updateCommands[updateCommand][i].handle || ((node, data) => data);
+
+                                    if (Object.keys(matched.groups()).length > 0) { // names groups
+                                        node.emit(
+                                            updateCommands[updateCommand][i].queryCommand,
+                                            handle(node, matched.groups())
+                                        )
+                                    } else {
+                                        node.emit(
+                                            updateCommands[updateCommand][i].queryCommand,
+                                            handle(node, matched[1])
+                                        )
+                                    }
+
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    setTimeout(function () {
+                        node.writeToClient();
+                    }, 100);
+
+                }
+            });
+
+            client.on('close', function (had_error) {
+                node.log("connection Close");
+                isPlayerConnected = false;
+                node.emit('PlayerStatus', "DISCONNECTED");
+                if (client != null) {
+                    client.destroy();
+                    client = null;
+                    commandStack = [];
+                    reconnectCounter++;
+
+                    setTimeout(function () {
+                        node.emit('PlayerStatus', "RECONNECTING");
+                        connectOppo(true);
+                    }, 10000 + 5000*Math.min(10, reconnectCounter));
+                }
+            });
+
+            // handle the 'onerror' event
+            client.on('error', function (err) {
+                if (err.type && (JSON.stringify(err.type) === '{}'))
+                    return; // ignore
+
+                node.warn('ERROR ' + JSON.stringify(err));
+                node.emit('Error', JSON.stringify(err));
+            });
+        }
     }
 
     RED.nodes.registerType("OPPO UDP 20x player", Oppo20xPlayerNode);
@@ -549,12 +559,12 @@ module.exports = function (RED) {
 
     function OppoOutNode(config) {
         RED.nodes.createNode(this, config);
-        this.name = config.name;
+        this.config = config;
         let node = this;
         let oppoplayer = RED.nodes.getNode(config.player);
-        let itemName = config.itemname;
+        let command = config.command;
 
-        if (itemName !== undefined) itemName = itemName.trim();
+        if (command !== undefined) command = command.trim();
 
         this.processStateEvent = function (event) {
 
@@ -570,23 +580,33 @@ module.exports = function (RED) {
 
                 // inject the state in the node-red flow
                 let msgid = RED.util.generateId();
-                node.send([{_msgid: msgid, payload: currentState, item: itemName, event: "StateEvent"}, null]);
+                node.send([{_msgid: msgid, payload: currentState, item: command, event: "StateEvent"}, null]);
             }
         };
 
         node.context().set("currentState", "?");
-        oppoplayer.addListener(itemName, node.processStateEvent);
+        oppoplayer.addListener(command, node.processStateEvent);
         //node.refreshNodeStatus();
 
         /* ===== Node-Red events ===== */
         this.on("input", function (msg) {
+            if (command === 'PAYLOAD') {
+                oppoplayer.queueCommand(msg.payload);
+            } else {
+                if (typeof setCommands[command] === 'object' && !!setCommands[command].hasParameter) {
+                    oppoplayer.queueCommand(command + ' ' + msg.payload.toString());
+                } else {
+                    oppoplayer.queueCommand(command);//, msg.payload.toString());
+                }
+
+            }
             if (msg != null) {
-                oppoplayer.queueCommand(itemName);//, msg.payload);
+
             }
         });
         this.on("close", function () {
             node.log('close');
-            oppoplayer.removeListener(itemName, node.processStateEvent);
+            oppoplayer.removeListener(command, node.processStateEvent);
         });
 
     }
