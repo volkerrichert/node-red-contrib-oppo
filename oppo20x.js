@@ -246,7 +246,7 @@ module.exports = function (RED) {
             "use strict";
             let now = Date.now();
             if (node.isPlayerOnline || cmd === 'QPW' || cmd === 'POW' || cmd === 'PON' ) {
-                 node.log("queing " + cmd);
+                RED.log.trace("queing " + cmd);
 
                 param = param || null;
                 commandStack.push({
@@ -260,7 +260,7 @@ module.exports = function (RED) {
                 if (commandStack.length > 0 && commandStack[0].timestamp !== null && commandStack[0].timestamp + 2000 < now) {
                     commandStack.shift();
                 }
-                node.log("queue: " + JSON.stringify(commandStack));
+                RED.log.trace("queue is: " + JSON.stringify(commandStack));
 
             }
 
@@ -273,7 +273,7 @@ module.exports = function (RED) {
                 if (command.timestamp === null) {
                     // command not send
                     command.timestamp = Date.now();
-                    node.log("sending " + CommandPrefix + command.name + (command.parameter !== null ? ' ' + command.parameter : ''));
+                    RED.log.trace("sending " + CommandPrefix + command.name + (command.parameter !== null ? ' ' + command.parameter : ''));
                     client.write(CommandPrefix + command.name + (command.parameter !== null ? ' ' + command.parameter : '') + "\r\n");
                 }
             }
@@ -297,7 +297,7 @@ module.exports = function (RED) {
         };
 
         node.on("close", function () {
-            node.log('closing oppo');
+            RED.log.trace('closing oppo');
             commandStack = [];
             if (client != null) {
                 client.destroy();
@@ -315,7 +315,7 @@ module.exports = function (RED) {
             }
             client = new net.Socket();
             client.connect(parseInt(config.port), config.host, function () {
-                node.log('Connected to ' + config.host + ":" + config.port);
+                RED.log.trace('Connected to ' + config.host + ":" + config.port);
                 isPlayerConnected = true;
                 reconnectCounter = 0;
 
@@ -329,7 +329,7 @@ module.exports = function (RED) {
 
             // handle the 'data' event
             client.on('data', function (data) {
-                node.log('receive ' + data.toString());
+                RED.log.debug('receive ' + data.toString());
                 // we may have multiple answers received -> split them
                 let answers = data.toString().split(AnswerPrefix);
                 answers.shift(); // remove first empty element
@@ -438,7 +438,7 @@ module.exports = function (RED) {
             });
 
             client.on('close', function (had_error) {
-                node.log("connection Close");
+                RED.log.trace("connection Close");
                 isPlayerConnected = false;
                 node.emit('PlayerStatus', "DISCONNECTED");
                 if (client != null) {
@@ -634,7 +634,7 @@ module.exports = function (RED) {
             }
         });
         this.on("close", function () {
-            node.log('close');
+            RED.log.trace('close');
             oppoplayer.removeListener(command, node.processStateEvent);
         });
 
