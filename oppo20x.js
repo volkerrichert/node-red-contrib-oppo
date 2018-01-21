@@ -229,7 +229,8 @@ module.exports = function (RED) {
 
         let commandStack = [],
             client = null,
-            reconnectCounter = 0;
+            reconnectCounter = 0,
+            restartTimer = null;
 
         RED.nodes.createNode(this, config);
 
@@ -299,10 +300,16 @@ module.exports = function (RED) {
         node.on("close", function () {
             RED.log.trace('closing oppo');
             commandStack = [];
+            if (restartTimer) {
+                clearTimeout(restartTimer);
+                restartTimer = null;
+            };
+
             if (client != null) {
-                client.end();
-                client.destroy();
+                let dummy = client;
                 client = null;
+                dummy.end();
+                dummy.destroy();
             }
             isPlayerConnected = false;
             reconnectCounter = 0;
@@ -449,7 +456,7 @@ module.exports = function (RED) {
                     commandStack = [];
                     reconnectCounter++;
 
-                    setTimeout(function () {
+                    restartTimer = setTimeout(function () {
                         node.emit('PlayerStatus', "RECONNECTING");
                         connectOppo(true);
                     }, 10000 + 5000*Math.min(10, reconnectCounter));
