@@ -300,6 +300,7 @@ module.exports = function (RED) {
             RED.log.trace('closing oppo');
             commandStack = [];
             if (client != null) {
+                client.end();
                 client.destroy();
                 client = null;
             }
@@ -311,6 +312,7 @@ module.exports = function (RED) {
 
         function connectOppo(isReconnecting) {
             if (client != null) {
+                client.end();
                 client.destroy();
             }
             client = new net.Socket();
@@ -504,7 +506,7 @@ module.exports = function (RED) {
                     shape = 'dot';
                     break;
                 case 'DISCONNECTED':
-                    color = 'gray';
+                    color = 'red';
                     shape = 'dot';
                     break;
                 case 'CONNECTED':
@@ -514,11 +516,9 @@ module.exports = function (RED) {
                     break;
                 default:
                     color = 'gray';
-                    shape = 'dot';
+                    shape = 'ring';
             }
-
-
-
+            
             if (currentState === '?' || currentState === null )
                 node.status({fill: color, shape: shape, text: "state: unknown"});
             else
@@ -641,6 +641,7 @@ module.exports = function (RED) {
     }
 
     RED.nodes.registerType("OPPO UDP 20x-out", OppoOutNode);
+
 
     /**
      * Start auto detection of OPPO 10x and 20x players
