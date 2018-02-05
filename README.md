@@ -5,7 +5,7 @@ A Node Red node for communicating with OPPO Digital UHD 20x player using TCP/IP
 Run the following npm command in your Node-RED user directory (typically ~/.node-red):
 ```
 $ cd ~/.node-red
-$ npm install node-red-contrib-openhab2
+$ npm install node-red-contrib-oppo
 ```
 
 ## Nodes
@@ -15,4 +15,4 @@ $ npm install node-red-contrib-openhab2
 ##### OPPO 20x out
 
 ## Remarks
-This node is not tested with older OPPO player. 
+This node ist tested with UHD 20x player

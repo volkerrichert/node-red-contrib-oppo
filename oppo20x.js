@@ -326,6 +326,7 @@ module.exports = function (RED) {
             client.connect(parseInt(config.port), config.host, function () {
                 RED.log.trace('Connected to ' + config.host + ":" + config.port);
                 isPlayerConnected = true;
+                node.status({fill: 'green', shape: 'dot', text: 'connected'});
                 reconnectCounter = 0;
 
                 node.queueCommand('QPW');
@@ -468,7 +469,8 @@ module.exports = function (RED) {
                 if (err.type && (JSON.stringify(err.type) === '{}'))
                     return; // ignore
 
-                node.warn('ERROR ' + JSON.stringify(err));
+                node.emit('PlayerStatus', "OFFLINE");
+                //node.warn('ERROR ' + JSON.stringify(err));
                 node.emit('Error', JSON.stringify(err));
             });
         }
@@ -527,7 +529,7 @@ module.exports = function (RED) {
             }
             
             if (currentState === '?' || currentState === null )
-                node.status({fill: color, shape: shape, text: "state: unknown"});
+                node.status({fill: color, shape: shape, text: "state: " + (currentStatus?currentStatus:'unknown') });
             else
                 node.status({
                     fill: color,
