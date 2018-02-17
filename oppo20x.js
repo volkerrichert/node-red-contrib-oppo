@@ -18,7 +18,13 @@ module.exports = function (RED) {
         'QVM': {
             desc: 'Query verbose mode',
             mode: null,
-            response: '(?:QVM )?OK ([0-9])'
+            response: '(?:QVM )?OK ([0-9])',
+            handle: (player, data) => {
+                "use strict";
+                data = parseInt(data);
+
+                return data;
+            }
         },
         'QPW': {
             desc: 'Query power status',
@@ -50,7 +56,7 @@ module.exports = function (RED) {
             handle: (player, volume) => {
                 "use strict";
                 if (volume === 'MUT' || volume === 'UMT') return 'MUTE';
-                return volume;
+                return parseInt(volume);
             }
         },
         'QHD': {
@@ -68,19 +74,41 @@ module.exports = function (RED) {
         'QTK': {
             desc: 'Query Track/Title',
             mode: null,
-            response: '(?:QTK )?OK (?<title>[0-9]+)/(?<total>[0-9]+)'
+            response: '(?:QTK )?OK (?<title>[0-9]+)/(?<total>[0-9]+)',
+            handle: (player, data) => {
+                "use strict";
+                data.title = parseInt(data.title);
+                data.total = parseInt(data.total);
+
+                return data;
+            },
+            getNodeState: (state) => state.title+"/"+state.total
         },
         'QCH': {
             desc: 'Query Chapter',
             mode: null,
-            response: '(?:QCH )?OK (?<chapter>[0-9]+)/(?<total>[0-9]+)'
+            response: '(?:QCH )?OK (?<chapter>[0-9]+)/(?<total>[0-9]+)',
+            handle: (player, data) => {
+                "use strict";
+                data.chapter = parseInt(data.chapter);
+                data.total = parseInt(data.total);
+
+                return data;
+            },
+            getNodeState: (state) => state.chapter+"/"+state.total
         },
         'QTE': {
             desc: 'Query Track/Title elapsed time',
             mode: 3,
             response: '(?:QTE )?OK (?<time>(?<h>[0-9][0-9]):(?<m>[0-9][0-9]):(?<s>[0-9][0-9]))',
             updateResponse: 'UTC (?<title>[^\ ]+) (?<chapter>[^\ ]+) E (?<time>(?<h>[0-9][0-9]):(?<m>[0-9][0-9]):(?<s>[0-9][0-9]))',
-            handle: parseTime,
+            handle: (player, data) => {
+                "use strict";
+                parseTime(player, data);
+                data.chapter = parseInt(data.chapter);
+
+                return data;
+            },
             getNodeState: (state) => state.time
         },
         'QTR': {
@@ -88,7 +116,13 @@ module.exports = function (RED) {
             mode: 3,
             response: '(?:QTR )?OK (?<time>(?<h>[0-9][0-9]):(?<m>[0-9][0-9]):(?<s>[0-9][0-9]))',
             updateResponse: 'UTC (?<title>[^ ]+) (?<chapter>[^ ]+) X (?<time>(?<h>[0-9][0-9]):(?<m>[0-9][0-9]):(?<s>[0-9][0-9]))',
-            handle: parseTime,
+            handle: (player, data) => {
+                "use strict";
+                parseTime(player, data);
+                data.chapter = parseInt(data.chapter);
+
+                return data;
+            },
             getNodeState: (state) => state.time
         },
         'QCE': {
@@ -96,7 +130,13 @@ module.exports = function (RED) {
             mode: 3,
             response: '(?:QCE )?OK (?<time>(?<h>[0-9][0-9]):(?<m>[0-9][0-9]):(?<s>[0-9][0-9]))',
             updateResponse: 'UTC (?<title>[^ ]+) (?<chapter>[^ ]+) C (?<time>(?<h>[0-9][0-9]):(?<m>[0-9][0-9]):(?<s>[0-9][0-9]))',
-            handle: parseTime,
+            handle: (player, data) => {
+                "use strict";
+                parseTime(player, data);
+                data.chapter = parseInt(data.chapter);
+
+                return data;
+            },
             getNodeState: (state) => state.time
         },
         'QCR': {
@@ -104,7 +144,13 @@ module.exports = function (RED) {
             mode: 3,
             response: '(?:QCR )?OK (?<time>(?<h>[0-9][0-9]):(?<m>[0-9][0-9]):(?<s>[0-9][0-9]))',
             updateResponse: 'UTC (?<title>[^ ]+) (?<chapter>[^ ]+) K (?<time>(?<h>[0-9][0-9]):(?<m>[0-9][0-9]):(?<s>[0-9][0-9]))',
-            handle: parseTime,
+            handle: (player, data) => {
+                "use strict";
+                parseTime(player, data);
+                data.chapter = parseInt(data.chapter);
+
+                return data;
+            },
             getNodeState: (state) => state.time
         },
         'QEL': {
@@ -112,7 +158,14 @@ module.exports = function (RED) {
             mode: 3,
             response: '(?:QEL )?OK (?<time>(?<h>[0-9][0-9]):(?<m>[0-9][0-9]):(?<s>[0-9][0-9]))',
             updateResponse: 'UTC\ (?<title>[^\ ]+)\ (?<chapter>[^\ ]+)\ T (?<time>(?<h>[0-9][0-9]):(?<m>[0-9][0-9]):(?<s>[0-9][0-9]))',
-            handle: parseTime,
+            handle: (player, data) => {
+                "use strict";
+
+                parseTime(player, data);
+                data.chapter = parseInt(data.chapter);
+
+                return data;
+            },
             getNodeState: (state) => state.time
         },
         'QRE': {
@@ -120,36 +173,80 @@ module.exports = function (RED) {
             mode: 3,
             response: '(?:QRE )?OK (?<time>(?<h>[0-9][0-9]):(?<m>[0-9][0-9]):(?<s>[0-9][0-9]))',
             updateResponse: 'UTC (?<title>[^ ]+) (?<chapter>[^ ]+) R (?<time>(?<h>[0-9][0-9]):(?<m>[0-9][0-9]):(?<s>[0-9][0-9]))',
-            handle: parseTime,
+            handle: (player, data) => {
+                "use strict";
+                parseTime(player, data);
+                data.chapter = parseInt(data.chapter);
+
+                return data;
+            },
             getNodeState: (state) => state.time
         },
         'QDT': {
             desc: 'Query disc type',
             mode: 2,
             response: '(?:QDT )?OK ([a-zA-Z \-]+)',
-            updateResponse: 'UDT'},
+            updateResponse: 'UDT'
+        },
         'QAT': {
             desc: 'Query audio type',
             mode: 2,
             response: '(?:QAT )?OK (?<type>[^ ]+) (?<track>[0-9]+)/(?<total>[0-9]+)(?: (?<language>[A-Za-z]*))',
-            updateResponse: 'UAT'},
+            handle: (player, data) => {
+                "use strict";
+
+                console.log(data);
+                data.track = parseInt(data.track);
+                data.total = parseInt(data.total);
+
+                return data;
+            },
+            getNodeState: (state) => state.track+"/"+state.total+" "+state.type+" "+state.language,
+            updateResponse: 'UAT'
+        },
         'QST': {
             desc: 'Query subtitle type',
             mode: 2,
             response: '(?:QST )?OK ([a-zA-Z \-]+)',
-            updateResponse: 'UST'},
+            updateResponse: 'UST'
+        },
         'QSH': {
             desc: 'Query subtitle shift',
             mode: null,
-            response: '(?:QSH )?OK ([0-9\-]+)'},
+            response: '(?:QSH )?OK ([0-9\-]+)'
+        },
         'QOP': {
             desc: 'Query OSD position',
             mode: null,
-            response: '(?:QOP )?OK ([0-5]+)'},
-        'QRP': {desc: 'Query Repeat Mode', mode: null,
-            response: '(?:QRP )?OK (?<number>[0-5][0-5]) (?<text>[A-Za-z \-]+)'},
+            response: '(?:QOP )?OK ([0-5]+)',
+            handle: (player, data) => {
+                "use strict";
+                data = parseInt(data);
+
+                return data;
+            },
+        },
+        'QRP': {
+            desc: 'Query Repeat Mode', mode: null,
+            response: '(?:QRP )?OK (?<number>[0-5][0-5]) (?<text>[A-Za-z \-]+)',
+            handle: (player, data) => {
+                "use strict";
+                data.number = parseInt(data.number);
+
+                return data;
+            },
+            getNodeState: (state) => state.number+" "+state.text
+        },
         'QZM': {desc: 'Query Zoom Mode', mode: null,
-            response: '(?:QZM )?OK (?<number>[0-5][0-5]) (?<text>[A-Za-z \-]+)'},
+            response: '(?:QZM )?OK (?<number>[0-5][0-5]) (?<text>[A-Za-z \-]+)',
+            handle: (player, data) => {
+                "use strict";
+                data.number = parseInt(data.number);
+
+                return data;
+            },
+            getNodeState: (state) => state.number+" "+state.text
+        }
     };
 
     let setCommands = {
@@ -458,9 +555,9 @@ module.exports = function (RED) {
                     reconnectCounter++;
 
                     restartTimer = setTimeout(function () {
-                        node.emit('PlayerStatus', "RECONNECTING");
+                        node.emit('PlayerStatus', "RECONNECTING (att " + reconnectCounter + ")");
                         connectOppo(true);
-                    }, 10000 + 5000*Math.min(10, reconnectCounter));
+                    }, 10000 + 2000*Math.min(10, reconnectCounter));
                 }
             });
 
