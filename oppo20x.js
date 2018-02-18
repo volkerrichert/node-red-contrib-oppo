@@ -553,22 +553,36 @@ module.exports = function (RED) {
                     client = null;
                     commandStack = [];
                     reconnectCounter++;
-
-                    restartTimer = setTimeout(function () {
-                        node.emit('PlayerStatus', "RECONNECTING (att " + reconnectCounter + ")");
-                        connectOppo(true);
-                    }, 10000 + 2000*Math.min(10, reconnectCounter));
+                    if (!had_error && restartTimer === null) {
+                        restartTimer = setTimeout(function () {
+                            restartTimer = null;
+                            node.emit('PlayerStatus', "RECONNECTING (att " + reconnectCounter + ")");
+                            connectOppo(true);
+                        }, 10000 + 2000 * Math.min(10, reconnectCounter));
+                    }
                 }
             });
 
             // handle the 'onerror' event
             client.on('error', function (err) {
+                isPlayerConnected = false;
                 if (err.type && (JSON.stringify(err.type) === '{}'))
                     return; // ignore
 
                 node.emit('PlayerStatus', "OFFLINE");
-                //node.warn('ERROR ' + JSON.stringify(err));
+                node.trace('ERROR ' + JSON.stringify(err));
                 node.emit('Error', JSON.stringify(err));
+
+                if (restartTimer) {
+                    clearTimeout(restartTimer);
+                    restartTimer = null;
+                };
+                restartTimer = setTimeout(function () {
+                    restartTimer = null;
+                    node.emit('PlayerStatus', "RECONNECTING (att " + reconnectCounter + ")");
+                    connectOppo(true);
+                }, 10000 + 2000*Math.min(10, reconnectCounter));
+
             });
         }
     }
@@ -626,12 +640,16 @@ module.exports = function (RED) {
             }
             
             if (currentState === '?' || currentState === null )
-                node.status({fill: color, shape: shape, text: "state: " + (currentStatus?currentStatus:'unknown') });
+                node.status({
+                    fill: color,
+                    shape: shape,
+                    text: (currentStatus?currentStatus:'unknown')
+                });
             else
                 node.status({
                     fill: color,
                     shape: shape,
-                    text: "state: " + (typeof currentState === 'object' ? getNodeStateAsString(currentState) : currentState)
+                    text: (typeof currentState === 'object' ? getNodeStateAsString(currentState) : currentState)
                 });
         };
 
