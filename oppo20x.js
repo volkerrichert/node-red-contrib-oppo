@@ -371,8 +371,11 @@ module.exports = function (RED) {
                     // command not send
                     command.timestamp = Date.now();
                     RED.log.trace("sending " + CommandPrefix + command.name + (command.parameter !== null ? ' ' + command.parameter : ''));
+                    client.setTimeout(5000);
                     client.write(CommandPrefix + command.name + (command.parameter !== null ? ' ' + command.parameter : '') + "\r\n");
                 }
+            } else {
+                client.setTimeout(0);
             }
         };
 
@@ -588,6 +591,7 @@ module.exports = function (RED) {
             // not used ATM
             client.on('timeout', () => {
                 node.trace('socket timeout');
+                client.end();
             });
         }
     }
