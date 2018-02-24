@@ -331,6 +331,7 @@ module.exports = function (RED) {
         let commandStack = [],
             client = null,
             reconnectCounter = 0,
+            removedCommandsCounter = 0,
             restartTimer = null;
 
         RED.nodes.createNode(this, config);
@@ -361,6 +362,10 @@ module.exports = function (RED) {
                 // improve this
                 if (commandStack.length > 0 && commandStack[0].timestamp !== null && commandStack[0].timestamp + 2000 < now) {
                     commandStack.shift();
+                    if (++node.removedCommandsCounter > 10) {
+                        client.end();
+                        node.setOnline(false);
+                    };
                 }
                 RED.log.trace("queue is: " + JSON.stringify(commandStack));
 
@@ -376,7 +381,7 @@ module.exports = function (RED) {
                     // command not send
                     command.timestamp = Date.now();
                     RED.log.trace("sending " + CommandPrefix + command.name + (command.parameter !== null ? ' ' + command.parameter : ''));
-                    client.setTimeout(5000); // oppo has to answer in 5 sec
+                    client.setTimeout(3000); // oppo has to answer in 3 sec
                     client.write(CommandPrefix + command.name + (command.parameter !== null ? ' ' + command.parameter : '') + "\r\n");
                 } else {
                     if (client !== null) client.setTimeout(0);
@@ -412,7 +417,7 @@ module.exports = function (RED) {
                         clearInterval(nopTimer);
                         nopTimer = null;
                     }
-
+                    node.commandStack = [];
                     this.emit('PlayerStatus', 'OFF');
                 }
             }
@@ -565,6 +570,7 @@ module.exports = function (RED) {
                     }
                 }
 
+                node.removedCommandsCounter = 0;
                 setTimeout(function () {
                     node.writeToClient();
                 }, 100);
