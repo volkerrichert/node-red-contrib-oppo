@@ -569,8 +569,6 @@ module.exports = function (RED) {
             // handle the 'onerror' event
             client.on('error', function (err) {
                 isPlayerConnected = false;
-                if (err.type && (JSON.stringify(err.type) === '{}'))
-                    return; // ignore
 
                 node.emit('PlayerStatus', "OFFLINE");
                 node.trace('ERROR ' + JSON.stringify(err));
