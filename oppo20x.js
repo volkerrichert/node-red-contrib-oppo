@@ -420,19 +420,20 @@ module.exports = function (RED) {
                 client.destroy();
             }
             client = new net.Socket();
-            client.connect(parseInt(config.port), config.host, function () {
-                RED.log.trace('Connected to ' + config.host + ":" + config.port);
-                isPlayerConnected = true;
-                node.status({fill: 'green', shape: 'dot', text: 'connected'});
-                reconnectCounter = 0;
+            client.setKeepAlive(true, 10000)
+                .connect(parseInt(config.port), config.host, function () {
+                    RED.log.trace('Connected to ' + config.host + ":" + config.port);
+                    isPlayerConnected = true;
+                    node.status({fill: 'green', shape: 'dot', text: 'connected'});
+                    reconnectCounter = 0;
 
-                node.queueCommand('QPW');
-                node.emit('PlayerStatus', 'CONNECTED');
+                    node.queueCommand('QPW');
+                    node.emit('PlayerStatus', 'CONNECTED');
 
-                setTimeout(function () {
-                    node.writeToClient();
-                }, 1000);
-            });
+                    setTimeout(function () {
+                        node.writeToClient();
+                    }, 1000);
+                });
 
             // handle the 'data' event
             client.on('data', function (data) {
@@ -583,6 +584,11 @@ module.exports = function (RED) {
                     connectOppo(true);
                 }, 10000 + 2000*Math.min(10, reconnectCounter));
 
+            });
+
+            // not used ATM
+            client.on('timeout', () => {
+                node.trace('socket timeout');
             });
         }
     }
