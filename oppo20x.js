@@ -192,6 +192,7 @@ module.exports = function (RED) {
             desc: 'Query audio type',
             mode: 2,
             response: '(?:QAT )?OK (?<type>[^ ]+) (?<track>[0-9]+)/(?<total>[0-9]+)(?: (?<language>[A-Za-z]*))',
+            updateResponse: 'UAT (?<type>[^ ]+) (?<track>[0-9]+)/(?<total>[0-9]+)(?: (?<language>[A-Za-z]*))',
             handle: (player, data) => {
                 "use strict";
 
@@ -202,7 +203,6 @@ module.exports = function (RED) {
                 return data;
             },
             getNodeState: (state) => state.track+"/"+state.total+" "+state.type+" "+state.language,
-            updateResponse: 'UAT'
         },
         'QST': {
             desc: 'Query subtitle type',
