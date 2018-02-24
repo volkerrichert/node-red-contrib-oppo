@@ -196,7 +196,6 @@ module.exports = function (RED) {
             handle: (player, data) => {
                 "use strict";
 
-                console.log(data);
                 data.track = parseInt(data.track);
                 data.total = parseInt(data.total);
 
