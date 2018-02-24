@@ -375,7 +375,7 @@ module.exports = function (RED) {
                     client.write(CommandPrefix + command.name + (command.parameter !== null ? ' ' + command.parameter : '') + "\r\n");
                 }
             } else {
-                client.setTimeout(0);
+                if (client !== null) client.setTimeout(0);
             }
         };
 
