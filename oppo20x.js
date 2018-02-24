@@ -249,6 +249,11 @@ module.exports = function (RED) {
     };
 
     let setCommands = {
+        'NOP': {
+            desc: 'no Opperation',
+            hasParameter: false,
+            response: 'OK'
+        },
         'SVM': {
             desc: 'set verbose mode',
             hasParameter: true,
@@ -371,13 +376,17 @@ module.exports = function (RED) {
                     // command not send
                     command.timestamp = Date.now();
                     RED.log.trace("sending " + CommandPrefix + command.name + (command.parameter !== null ? ' ' + command.parameter : ''));
-                    client.setTimeout(5000);
+                    client.setTimeout(5000); // oppo has to answer in 5 sec
                     client.write(CommandPrefix + command.name + (command.parameter !== null ? ' ' + command.parameter : '') + "\r\n");
+                } else {
+                    if (client !== null) client.setTimeout(0);
                 }
             } else {
                 if (client !== null) client.setTimeout(0);
             }
         };
+
+        let nopTimer = null;
 
         node.setOnline = function(isPlayerOnline) {
             if (this.isPlayerOnline !== isPlayerOnline) {
@@ -389,8 +398,21 @@ module.exports = function (RED) {
                     setTimeout(() => {
                         node.queueCommand('SVM', '3');
                         node.emit('PlayerStatus', 'ON');
+
+                        if (nopTimer !== null) {
+                            clearInterval(nopTimer);
+                            nopTimer = null;
+                        }
+                        nopTimer = setInterval(() => {
+                           node.queueCommand("NOP");
+                        }, 30000);
                     }, 3000);
                 } else {
+                    if (nopTimer !== null) {
+                        clearInterval(nopTimer);
+                        nopTimer = null;
+                    }
+
                     this.emit('PlayerStatus', 'OFF');
                 }
             }
@@ -411,6 +433,7 @@ module.exports = function (RED) {
                 dummy.destroy();
             }
             isPlayerConnected = false;
+            node.setOnline(false);
             reconnectCounter = 0;
         });
 
@@ -548,8 +571,11 @@ module.exports = function (RED) {
             });
 
             client.on('close', function (had_error) {
-                RED.log.trace("connection Close");
                 isPlayerConnected = false;
+                node.setOnline(false);
+
+                RED.log.trace("connection Close");
+
                 node.emit('PlayerStatus', "DISCONNECTED");
                 if (client != null) {
                     client.destroy();
@@ -569,9 +595,10 @@ module.exports = function (RED) {
             // handle the 'onerror' event
             client.on('error', function (err) {
                 isPlayerConnected = false;
+                node.setOnline(false);
 
                 node.emit('PlayerStatus', "OFFLINE");
-                node.trace('ERROR ' + JSON.stringify(err));
+                RED.log.trace('ERROR ' + JSON.stringify(err));
                 node.emit('Error', JSON.stringify(err));
 
                 if (restartTimer) {
@@ -588,7 +615,7 @@ module.exports = function (RED) {
 
             // not used ATM
             client.on('timeout', () => {
-                node.trace('socket timeout');
+                RED.log.trace('socket timeout');
                 client.end();
             });
         }
